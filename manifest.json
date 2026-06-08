@@ -4,8 +4,8 @@
   "description": "Mobile-friendly code editor for vibe coders",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e1e1e",
-  "theme_color": "#1e1e1e",
+  "background_color": "#55F",
+  "theme_color": "#101010",
   "orientation": "any",
   "icons": [
     {
