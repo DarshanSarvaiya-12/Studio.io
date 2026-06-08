@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Dark Editor</title>
+    <style>
+        /* Modern Reset & Smooth Layout */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d1117; /* Premium Dark Background */
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sleek Header Navigation */
+        header {
+            background-color: #161b22;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        header .brand-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Group for header action items */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Glowing indicator icon */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #58a6ff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #58a6ff;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #f0f6fc;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:active {
+            transform: scale(0.97);
+        }
+
+        .action-btn.active {
+            background-color: #30363d;
+            border-color: #58a6ff;
+            color: #fff;
+        }
+
+        /* Interactive Sliding Tool Drawer */
+        .tools-drawer {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 0 20px;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+        }
+
+        .tools-drawer.open {
+            max-height: 150px; /* Expands smoothly */
+            padding: 12px 20px;
+            opacity: 1;
+        }
+
+        .tool-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            min-width: 65px;
+        }
+
+        .tool-input {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            outline: none;
+            width: 140px;
+            transition: border-color 0.2s;
+        }
+
+        .tool-input:focus {
+            border-color: #58a6ff;
+        }
+
+        .tool-input.wide {
+            width: 200px;
+            flex-grow: 0;
+        }
+
+        .inline-btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .inline-btn:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        /* Editor Workspace Canvas */
+        .editor-workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            background-color: #0d1117;
+            overflow: hidden;
+            padding-top: 5px;
+        }
+
+        /* Dynamic Line Number Column */
+        .line-numbers {
+            width: 48px;
+            padding: 15px 8px;
+            text-align: right;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #484f58;
+            background-color: #0d1117;
+            user-select: none;
+            overflow: hidden;
+            border-right: 1px solid #21262d;
+        }
+
+        /* Code Input Canvas */
+        .textarea-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+
+        textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            background-color: transparent;
+            color: #e6edf3;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            padding: 15px;
+            outline: none;
+            white-space: pre;
+            overflow-x: auto;
+            caret-color: #58a6ff; /* Neon blue flashing typing cursor */
+        }
+
+        /* Custom Scrollbar Styling for a premium feel */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #8b949e;
+        }
+
+        /* --- Full Screen Overlay/New Page for Permanent Mobile Files --- */
+        .files-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0d1117;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%); /* Keeps off-screen right by default */
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .files-page.open {
+            transform: translateX(0); /* Slide smoothly into view */
+        }
+
+        .files-header {
+            background-color: #161b22;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .files-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+
+        .files-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .file-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #58a6ff;
+            font-size: 1rem;
+        }
+
+        .file-date {
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+
+        .file-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .load-btn {
+            background-color: #238636;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background-color: #da3637;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .no-files-msg {
+            text-align: center;
+            color: #8b949e;
+            margin-top: 40px;
+            font-size: 0.95rem;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            header {
+                padding: 12px 10px;
+            }
+            header h1 {
+                font-size: 0.95rem;
+            }
+            .action-btn {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+                gap: 4px;
+            }
+            textarea, .line-numbers {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            .line-numbers {
+                width: 40px;
+            }
+            .tool-input {
+                width: 90px;
+            }
+            .tool-input.wide {
+                width: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-info">
+            <div class="status-dot"></div>
+            <h1>Studio.io</h1>
+        </div>
+        
+        <div class="header-controls">
+            <button class="action-btn" id="save-file-btn" onclick="saveFilePermanently()">
+                <span></span> Save
+            </button>
+            
+            <button class="action-btn" id="files-page-btn" onclick="toggleFilesPage()">
+                <span></span> Files
+            </button>
+
+            <button class="action-btn" id="edit-panel-btn" onclick="toggleEditDrawer()">
+                <span></span> Edit
+            </button>
+        </div>
+    </header>
+
+    <div class="tools-drawer" id="tools-drawer">
+        <div class="tool-row">
+            <span class="tool-label">Find:</span>
+            <input type="text" id="find-query" class="tool-input wide" placeholder="Type term to search..." onkeydown="if(event.key === 'Enter') executeFind()">
+            <button class="inline-btn" onclick="executeFind()">Next</button>
+        </div>
+
+        <div class="tool-row">
+            <span class="tool-label"> Select:</span>
+            <input type="number" id="cut-start" class="tool-input" placeholder="From Line" min="1">
+            <input type="number" id="cut-end" class="tool-input" placeholder="To Line" min="1">
+            <button class="inline-btn" onclick="executeRangeCut()">Cut Section</button>
+        </div>
+    </div>
+
+    <div class="editor-workspace">
+        <div class="line-numbers" id="line-counter">1</div>
+        
+        <div class="textarea-container">
+            <textarea 
+                id="code-input" 
+                placeholder="// Start writing your modern code here..." 
+                spellcheck="false"
+                oninput="syncEditor()" 
+                onscroll="syncScroll()"></textarea>
+        </div>
+    </div>
+
+    <div class="files-page" id="files-page">
+        <div class="files-header">
+            <h2>Saved Files</h2>
+            <button class="action-btn" onclick="toggleFilesPage()">
+                <span></span> Back to Editor
+            </button>
+        </div>
+        <div class="files-content">
+            <div class="files-list" id="files-list-container">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const codeInput = document.getElementById('code-input');
+        const lineCounter = document.getElementById('line-counter');
+        const toolsDrawer = document.getElementById('tools-drawer');
+        const editPanelBtn = document.getElementById('edit-panel-btn');
+        const filesPage = document.getElementById('files-page');
+        const filesListContainer = document.getElementById('files-list-container');
+
+        let lastSearchIndex = 0;
+
+        // Function to handle line counting logic
+        function syncEditor() {
+            const lines = codeInput.value.split('\n').length;
+            let lineNumbersHtml = '';
+            
+            for (let i = 1; i <= lines; i++) {
+                lineNumbersHtml += i + '<br>';
+            }
+            
+            lineCounter.innerHTML = lineNumbersHtml;
+        }
+
+        // Keep line number numbers directly synced with user viewport scrolling
+        function syncScroll() {
+            lineCounter.scrollTop = codeInput.scrollTop;
+        }
+
+        // Toggle Edit Menu Sub-Drawer Setup
+        function toggleEditDrawer() {
+            toolsDrawer.classList.toggle('open');
+            editPanelBtn.classList.toggle('active');
+        }
+
+        // Toggle visibility of the isolated Files Screen interface layer
+        function toggleFilesPage() {
+            filesPage.classList.toggle('open');
+            if(filesPage.classList.contains('open')) {
+                renderSavedFiles();
+            }
+        }
+
+        // Permanent mobile-local database storage write procedure 
+        function saveFilePermanently() {
+            const currentCode = codeInput.value;
+            if(!currentCode.trim()) {
+                alert("Cannot save an empty code module.");
+                return;
+            }
+
+            const fileName = prompt("Enter a name for your file:", "script.js");
+            if (!fileName || fileName.trim() === "") return;
+
+            // Fetch current stored ecosystem array or initialize fresh structures
+            let existingStorage = localStorage.getItem("studio_io_database");
+            let filesMap = existingStorage ? JSON.parse(existingStorage) : {};
+
+            // Map key elements into local database array tracking definitions
+            filesMap[fileName] = {
+                code: currentCode,
+                modified: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+
+            localStorage.setItem("studio_io_database", JSON.stringify(filesMap));
+            alert(`"${fileName}" saved successfully inside system storage!`);
+        }
+
+        // Component renderer interface engine to handle displaying files database records
+        function renderSavedFiles() {
+            filesListContainer.innerHTML = "";
+            let existingStorage = localStorage.getItem("studio_io_database");
+            let filesMap = existingStorage ? JSON.parse(existingStorage) : {};
+            let keys = Object.keys(filesMap);
+
+            if (keys.length === 0) {
+                filesListContainer.innerHTML = `<div class="no-files-msg">No files stored on this device yet. Hit Save in the workspace to write data records.</div>`;
+                return;
+            }
+
+            keys.forEach(fileName => {
+                const item = filesMap[fileName];
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.innerHTML = `
+                    <div class="file-details">
+                        <span class="file-name">📄 ${fileName}</span>
+                        <span class="file-date">Last modified: ${item.modified}</span>
+                    </div>
+                    <div class="file-card-actions">
+                        <button class="load-btn" onclick="loadTargetFile('${escapeHtml(fileName)}')">Load</button>
+                        <button class="delete-btn" onclick="deleteTargetFile('${escapeHtml(fileName)}')">Delete</button>
+                    </div>
+                `;
+                filesListContainer.appendChild(card);
+            });
+        }
+
+        // Pull targeted dataset back into main runtime editor stream paths
+        function loadTargetFile(name) {
+            let existingStorage = localStorage.getItem("studio_io_database");
+            if(!existingStorage) return;
+            
+            let filesMap = JSON.parse(existingStorage);
+            if(filesMap[name]) {
+                codeInput.value = filesMap[name].code;
+                syncEditor();
+                toggleFilesPage(); // Auto return to active code editor workspace layer
+            }
+        }
+
+        // Delete code item completely out of mobile local tracking registers
+        function deleteTargetFile(name) {
+            if(!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
+            
+            let existingStorage = localStorage.getItem("studio_io_database");
+            if(!existingStorage) return;
+
+            let filesMap = JSON.parse(existingStorage);
+            delete filesMap[name];
+
+            localStorage.setItem("studio_io_database", JSON.stringify(filesMap));
+            renderSavedFiles(); // Dynamically update viewport view configurations
+        }
+
+        // Helper framework to shield UI renders from execution breaking sequences 
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        }
+
+        // Engine to scan and pinpoint search queries inside active textarea selection states
+        function executeFind() {
+            const queryText = document.getElementById('find-query').value;
+            const textSource = codeInput.value;
+            
+            if (!queryText) {
+                alert("Please enter something to search for.");
+                return;
+            }
+
+            let matchIndex = textSource.toLowerCase().indexOf(queryText.toLowerCase(), lastSearchIndex);
+            
+            // Loop search processing back to the top of the file if nothing is found below current pointer
+            if (matchIndex === -1) {
+                matchIndex = textSource.toLowerCase().indexOf(queryText.toLowerCase(), 0);
+            }
+
+            if (matchIndex !== -1) {
+                codeInput.focus();
+                codeInput.setSelectionRange(matchIndex, matchIndex + queryText.length);
+                
+                // Track forward index references for consecutive clicks
+                lastSearchIndex = matchIndex + queryText.length;
+
+                // Auto-center view scroll down to selection
+                const precedingLines = textSource.substring(0, matchIndex).split('\n').length;
+                const computedLineHeight = 24; // Approximation maps line height 1.6
+                codeInput.scrollTop = (precedingLines - 3) * computedLineHeight;
+                syncScroll();
+            } else {
+                alert("No matches found for: " + queryText);
+                lastSearchIndex = 0; // Reset index tracker parameters
+            }
+        }
+
+        // Automatic line block selector and processing cut execution loop
+        function executeRangeCut() {
+            const startLineNum = parseInt(document.getElementById('cut-start').value);
+            const endLineNum = parseInt(document.getElementById('cut-end').value);
+            const codeLinesArray = codeInput.value.split('\n');
+
+            if (isNaN(startLineNum) || isNaN(endLineNum)) {
+                alert("Please fill out both 'From' and 'To' line values.");
+                return;
+            }
+
+            if (startLineNum < 1 || endLineNum < startLineNum) {
+                alert("Invalid line range selection provided.");
+                return;
+            }
+
+            if (startLineNum > codeLinesArray.length) {
+                alert("Start line entry exceeds current active text line counts.");
+                return;
+            }
+
+            // Splice out requested array slice configuration mapping (Converting 1-based ranges to 0-based index)
+            const targetCount = (endLineNum > codeLinesArray.length ? codeLinesArray.length : endLineNum) - startLineNum + 1;
+            codeLinesArray.splice(startLineNum - 1, targetCount);
+
+            // Reconstruct editor values safely
+            codeInput.value = codeLinesArray.join('\n');
+            
+            // Sync environment states and refresh counters
+            syncEditor();
+
+            // Flash inputs back to clear state
+            document.getElementById('cut-start').value = '';
+            document.getElementById('cut-end').value = '';
+        }
+
+        // Enable standard desktop Tab spacing on mobile layout arrays
+        codeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                // Set textarea value to: text before caret + tab + text after caret
+                this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+
+                // Put caret in correct place
+                this.selectionStart = this.selectionEnd = start + 2;
+                syncEditor();
+            }
+        });
+
+        // Initialize script logic automatically on system mount
+        syncEditor();
+    </script>
+</body>
+</html>
