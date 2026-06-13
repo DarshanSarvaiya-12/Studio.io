@@ -1,4 +1,4 @@
-const CACHE = "codeeditor-v1";
+const CACHE = "codeeditor-v2";
 const ASSETS = [
   "/",
   "/index.html"
