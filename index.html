@@ -385,12 +385,12 @@
             <div class="status-dot"></div>
             <h1>Studio.io</h1>
         </div>
-        
+
         <div class="header-controls">
             <button class="action-btn" id="save-file-btn" onclick="saveFilePermanently()">
                 <span></span> Save
             </button>
-            
+
             <button class="action-btn" id="files-page-btn" onclick="toggleFilesPage()">
                 <span></span> Files
             </button>
@@ -418,7 +418,7 @@
 
     <div class="editor-workspace">
         <div class="line-numbers" id="line-counter">1</div>
-        
+
         <div class="textarea-container">
             <textarea 
                 id="code-input" 
@@ -456,11 +456,11 @@
         function syncEditor() {
             const lines = codeInput.value.split('\n').length;
             let lineNumbersHtml = '';
-            
+
             for (let i = 1; i <= lines; i++) {
                 lineNumbersHtml += i + '<br>';
             }
-            
+
             lineCounter.innerHTML = lineNumbersHtml;
         }
 
@@ -483,8 +483,8 @@
             }
         }
 
-        // Permanent mobile-local database storage write procedure 
-        function saveFilePermanently() {
+        // Centralized API pipeline stream to execute database writes
+        async function saveFilePermanently() {
             const currentCode = codeInput.value;
             if(!currentCode.trim()) {
                 alert("Cannot save an empty code module.");
@@ -494,75 +494,100 @@
             const fileName = prompt("Enter a name for your file:", "script.js");
             if (!fileName || fileName.trim() === "") return;
 
-            // Fetch current stored ecosystem array or initialize fresh structures
-            let existingStorage = localStorage.getItem("studio_io_database");
-            let filesMap = existingStorage ? JSON.parse(existingStorage) : {};
+            try {
+                const response = await fetch('/api/files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: fileName,
+                        code: currentCode,
+                        modified: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    })
+                });
 
-            // Map key elements into local database array tracking definitions
-            filesMap[fileName] = {
-                code: currentCode,
-                modified: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-            };
-
-            localStorage.setItem("studio_io_database", JSON.stringify(filesMap));
-            alert(`"${fileName}" saved successfully inside system storage!`);
+                if (response.ok) {
+                    alert(`"${fileName}" securely saved to the database cluster!`);
+                } else {
+                    alert("System encountered an error writing to the database.");
+                }
+            } catch (error) {
+                console.error("Database connection failure:", error);
+                alert("Network error. Verify server uptime parameters.");
+            }
         }
 
         // Component renderer interface engine to handle displaying files database records
-        function renderSavedFiles() {
-            filesListContainer.innerHTML = "";
-            let existingStorage = localStorage.getItem("studio_io_database");
-            let filesMap = existingStorage ? JSON.parse(existingStorage) : {};
-            let keys = Object.keys(filesMap);
+        async function renderSavedFiles() {
+            filesListContainer.innerHTML = '<div class="no-files-msg">Fetching records from cloud database...</div>';
+            
+            try {
+                const response = await fetch('/api/files');
+                const filesArray = await response.json();
 
-            if (keys.length === 0) {
-                filesListContainer.innerHTML = `<div class="no-files-msg">No files stored on this device yet. Hit Save in the workspace to write data records.</div>`;
-                return;
+                filesListContainer.innerHTML = "";
+
+                if (filesArray.length === 0) {
+                    filesListContainer.innerHTML = `<div class="no-files-msg">No files stored on the server yet. Hit Save in the workspace to write data records.</div>`;
+                    return;
+                }
+
+                filesArray.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'file-card';
+                    card.innerHTML = `
+                        <div class="file-details">
+                            <span class="file-name">📄 ${escapeHtml(item.fileName)}</span>
+                            <span class="file-date">Last modified: ${escapeHtml(item.modified)}</span>
+                        </div>
+                        <div class="file-card-actions">
+                            <button class="load-btn" onclick="loadTargetFile('${escapeHtml(item.fileName)}')">Load</button>
+                            <button class="delete-btn" onclick="deleteTargetFile('${escapeHtml(item.fileName)}')">Delete</button>
+                        </div>
+                    `;
+                    filesListContainer.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Data retrieval error:", error);
+                filesListContainer.innerHTML = `<div class="no-files-msg" style="color: #da3637;">Failed to sync with MongoDB backend.</div>`;
             }
-
-            keys.forEach(fileName => {
-                const item = filesMap[fileName];
-                const card = document.createElement('div');
-                card.className = 'file-card';
-                card.innerHTML = `
-                    <div class="file-details">
-                        <span class="file-name">📄 ${fileName}</span>
-                        <span class="file-date">Last modified: ${item.modified}</span>
-                    </div>
-                    <div class="file-card-actions">
-                        <button class="load-btn" onclick="loadTargetFile('${escapeHtml(fileName)}')">Load</button>
-                        <button class="delete-btn" onclick="deleteTargetFile('${escapeHtml(fileName)}')">Delete</button>
-                    </div>
-                `;
-                filesListContainer.appendChild(card);
-            });
         }
 
         // Pull targeted dataset back into main runtime editor stream paths
-        function loadTargetFile(name) {
-            let existingStorage = localStorage.getItem("studio_io_database");
-            if(!existingStorage) return;
-            
-            let filesMap = JSON.parse(existingStorage);
-            if(filesMap[name]) {
-                codeInput.value = filesMap[name].code;
-                syncEditor();
-                toggleFilesPage(); // Auto return to active code editor workspace layer
+        async function loadTargetFile(name) {
+            try {
+                const response = await fetch(`/api/files/${encodeURIComponent(name)}`);
+                if (response.ok) {
+                    const fileData = await response.json();
+                    codeInput.value = fileData.code;
+                    syncEditor();
+                    toggleFilesPage(); // Auto return to active code editor workspace layer
+                } else {
+                    alert("Requested file payload could not be located on the server.");
+                }
+            } catch (error) {
+                console.error("Failed to extract file payload:", error);
+                alert("Network architecture error during extraction.");
             }
         }
 
-        // Delete code item completely out of mobile local tracking registers
-        function deleteTargetFile(name) {
-            if(!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
-            
-            let existingStorage = localStorage.getItem("studio_io_database");
-            if(!existingStorage) return;
+        // Delete code item completely out of cloud tracking registers
+        async function deleteTargetFile(name) {
+            if(!confirm(`Are you sure you want to permanently delete "${name}" from the database?`)) return;
 
-            let filesMap = JSON.parse(existingStorage);
-            delete filesMap[name];
+            try {
+                const response = await fetch(`/api/files/${encodeURIComponent(name)}`, {
+                    method: 'DELETE'
+                });
 
-            localStorage.setItem("studio_io_database", JSON.stringify(filesMap));
-            renderSavedFiles(); // Dynamically update viewport view configurations
+                if (response.ok) {
+                    renderSavedFiles(); // Dynamically update viewport view configurations
+                } else {
+                    alert("Server rejected the deletion command.");
+                }
+            } catch (error) {
+                console.error("Deletion protocol failure:", error);
+                alert("Failed to communicate the deletion request to backend services.");
+            }
         }
 
         // Helper framework to shield UI renders from execution breaking sequences 
@@ -574,14 +599,14 @@
         function executeFind() {
             const queryText = document.getElementById('find-query').value;
             const textSource = codeInput.value;
-            
+
             if (!queryText) {
                 alert("Please enter something to search for.");
                 return;
             }
 
             let matchIndex = textSource.toLowerCase().indexOf(queryText.toLowerCase(), lastSearchIndex);
-            
+
             // Loop search processing back to the top of the file if nothing is found below current pointer
             if (matchIndex === -1) {
                 matchIndex = textSource.toLowerCase().indexOf(queryText.toLowerCase(), 0);
@@ -590,7 +615,7 @@
             if (matchIndex !== -1) {
                 codeInput.focus();
                 codeInput.setSelectionRange(matchIndex, matchIndex + queryText.length);
-                
+
                 // Track forward index references for consecutive clicks
                 lastSearchIndex = matchIndex + queryText.length;
 
@@ -632,7 +657,7 @@
 
             // Reconstruct editor values safely
             codeInput.value = codeLinesArray.join('\n');
-            
+
             // Sync environment states and refresh counters
             syncEditor();
 
